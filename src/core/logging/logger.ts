@@ -16,6 +16,19 @@ export const logger = pino(
   {
     level: environment.LOG_LEVEL,
     timestamp: pino.stdTimeFunctions.isoTime,
+    redact: {
+      paths: [
+        'password',
+        'token',
+        'accessToken',
+        'refreshToken',
+        'apiKey',
+        'authorization',
+        'headers.authorization',
+        'req.headers.authorization',
+      ],
+      censor: '[REDACTED]',
+    },
   },
   transport ? pino.transport(transport) : undefined,
 );
