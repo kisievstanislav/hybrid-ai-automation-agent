@@ -1,14 +1,15 @@
-import { generateCorrelationId } from './core/utils/correlation-id.js';
-import { createWorkflowLogger } from './core/logging/workflow-logger.js';
+import {
+  ApiError,
+  BaseAppError,
+  logError,
+} from './core/errors/index.js';
 
-const correlationId = generateCorrelationId();
-
-const workflowLogger = createWorkflowLogger({
-  correlationId,
-  ticketId: 'TKT-1001',
-  queueItemId: 'QUEUE-1001',
-});
-
-workflowLogger.info('Ticket workflow started');
-workflowLogger.info('Ticket classification completed');
-workflowLogger.info('Ticket workflow completed');
+try {
+  throw new ApiError('Ticket API is temporarily unavailable');
+} catch (error: unknown) {
+  if (error instanceof BaseAppError) {
+    logError(error);
+  } else {
+    throw error;
+  }
+}
