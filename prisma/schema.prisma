@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum CustomerType {
+  STANDARD
+  PREMIUM
+  ENTERPRISE
+}
+
+enum TicketStatus {
+  NEW
+  IN_PROGRESS
+  PENDING_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TicketCategory {
+  AUTHENTICATION
+  BILLING
+  TECHNICAL
+  ACCOUNT
+  SECURITY
+  OTHER
+}
+
+enum SupportTeam {
+  IDENTITY_SUPPORT
+  BILLING_SUPPORT
+  TECHNICAL_SUPPORT
+  ACCOUNT_SUPPORT
+  SECURITY_OPERATIONS
+  GENERAL_SUPPORT
+}
+
+enum QueueItemStatus {
+  NEW
+  CLAIMED
+  PROCESSING
+  COMPLETED
+  FAILED
+  HUMAN_REVIEW
+  RETRY_PENDING
+}
+
+enum ProcessingDecision {
+  AUTO_PROCESS
+  HUMAN_REVIEW
+  REJECTED
+  TECHNICAL_FAILURE
+  BUSINESS_FAILURE
+  RETRY_PENDING
+}
+
+enum AuditEventType {
+  QUEUE_ITEM_CLAIMED
+  TICKET_RETRIEVED
+  TICKET_VALIDATED
+  AI_CLASSIFICATION_COMPLETED
+  BUSINESS_RULES_EVALUATED
+  HUMAN_REVIEW_REQUIRED
+  TICKET_UPDATE_STARTED
+  TICKET_UPDATED
+  TICKET_UPDATE_VERIFIED
+  QUEUE_ITEM_COMPLETED
+  WORKFLOW_FAILED
+  RETRY_SCHEDULED
+}
+
+model Ticket {
+  id               String          @id
+  title            String
+  description      String
+  customerType     CustomerType
+  status           TicketStatus    @default(NEW)
+  priority         TicketPriority?
+  category         TicketCategory?
+  assignedTeam     SupportTeam?
+  tags             Json
+  previousAttempts Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  queueItem         QueueItem?
+  processingResults ProcessingResult[]
+  auditEvents       AuditEvent[]
+
+  @@index([status])
+  @@index([customerType])
+  @@index([createdAt])
+}
+
+model QueueItem {
+  id            String          @id
+  ticketId      String          @unique
+  status        QueueItemStatus @default(NEW)
+  attemptCount  Int             @default(0)
+  correlationId String          @unique
+  workerId      String?
+  createdAt     DateTime        @default(now())
+  claimedAt     DateTime?
+  completedAt   DateTime?
+  lastError     String?
+
+  ticket            Ticket             @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  processingResults ProcessingResult[]
+  auditEvents       AuditEvent[]
+
+  @@index([status, createdAt])
+  @@index([workerId])
+}
+
+model ProcessingResult {
+  id               String             @id
+  ticketId         String
+  queueItemId      String
+  correlationId    String
+  aiClassification Json?
+  decision         ProcessingDecision
+  successful       Boolean
+  message          String
+  processedAt      DateTime           @default(now())
+
+  ticket    Ticket    @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  queueItem QueueItem @relation(fields: [queueItemId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([ticketId, processedAt])
+  @@index([queueItemId])
+  @@index([correlationId])
+  @@index([decision])
+}
+
+model AuditEvent {
+  id            String         @id
+  ticketId      String
+  queueItemId   String
+  correlationId String
+  eventType     AuditEventType
+  eventData     Json
+  createdAt     DateTime       @default(now())
+
+  ticket    Ticket    @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  queueItem QueueItem @relation(fields: [queueItemId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([ticketId, createdAt])
+  @@index([queueItemId, createdAt])
+  @@index([correlationId])
+  @@index([eventType])
+}
