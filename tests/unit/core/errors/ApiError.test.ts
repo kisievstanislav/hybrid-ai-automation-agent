@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import { ApiError } from "../../../../src/core/errors/index.js";
-import { assertBaseError } from "../../helpers/assertBaseError.js";
+import { assertBaseError } from "../../../helpers/assertBaseError.js";
 
 describe("ApiError", () => {
   it("should create a retryable API error", () => {

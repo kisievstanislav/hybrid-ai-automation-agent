@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import { BusinessRuleError } from "../../../../src/core/errors/index.js";
-import { assertBaseError } from "../../helpers/assertBaseError.js";
+import { assertBaseError } from "../../../helpers/assertBaseError.js";
 
 describe("BusinessRuleError", () => {
   it("should create a non-retryable business rule error", () => {

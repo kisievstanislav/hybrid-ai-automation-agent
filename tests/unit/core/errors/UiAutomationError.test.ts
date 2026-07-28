@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import { UiAutomationError } from "../../../../src/core/errors/index.js";
-import { assertBaseError } from "../../helpers/assertBaseError.js";
+import { assertBaseError } from "../../../helpers/assertBaseError.js";
 
 describe("UiAutomationError", () => {
   it("should create a retryable UI automation error", () => {

@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import { AiResponseValidationError } from "../../../../src/core/errors/index.js";
-import { assertBaseError } from "../../helpers/assertBaseError.js";
+import { assertBaseError } from "../../../helpers/assertBaseError.js";
 
 describe("AiResponseValidationError", () => {
   it("should create a non-retryable AI response validation error", () => {

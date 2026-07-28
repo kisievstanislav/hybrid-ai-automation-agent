@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import { QueueError } from "../../../../src/core/errors/index.js";
-import { assertBaseError } from "../../helpers/assertBaseError.js";
+import { assertBaseError } from "../../../helpers/assertBaseError.js";
 
 describe("QueueError", () => {
   it("should create a retryable queue error", () => {

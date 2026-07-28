@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import { ConfigurationError } from "../../../../src/core/errors/index.js";
-import { assertBaseError } from "../../helpers/assertBaseError.js";
+import { assertBaseError } from "../../../helpers/assertBaseError.js";
 
 describe("ConfigurationError", () => {
   it("should create a non-retryable configuration error", () => {

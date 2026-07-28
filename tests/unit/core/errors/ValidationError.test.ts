@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import { ValidationError } from "../../../../src/core/errors/index.js";
-import { assertBaseError } from "../../helpers/assertBaseError.js";
+import { assertBaseError } from "../../../helpers/assertBaseError.js";
 
 describe("ValidationError", () => {
   it("should create a non-retryable validation error", () => {

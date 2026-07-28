@@ -1,5 +1,5 @@
 import { expect } from "vitest";
-import { BaseAppError } from "../../../src/core/errors/BaseAppError.js";
+import { BaseAppError } from "../../src/core/errors/BaseAppError.js";
 
 interface AssertBaseErrorOptions {
   error: BaseAppError;
