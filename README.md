@@ -21,9 +21,9 @@ An enterprise-style automation project built to demonstrate modern test automati
 - TypeScript
 - Node.js
 - Playwright
-- Express / Fastify (planned)
+- Fastify 
 - SQLite
-- Prisma (planned)
+- Prisma 
 - Zod
 - Pino
 - Vitest
