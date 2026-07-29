@@ -4,10 +4,14 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+
     include: [
-  "tests/unit/**/*.test.ts",
-  "tests/integration/**/*.test.ts",
-],
+      "tests/unit/**/*.test.ts",
+      "tests/integration/**/*.test.ts",
+    ],
+
+    fileParallelism: false,
+
     coverage: {
       reporter: ["text", "html"],
     },

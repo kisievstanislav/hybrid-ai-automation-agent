@@ -144,6 +144,7 @@ async function seedQueueItems(): Promise<void> {
         workerId: null,
         claimedAt: null,
         completedAt: null,
+        nextAttemptAt: null,
         lastError: null,
       },
       update: {
@@ -154,6 +155,7 @@ async function seedQueueItems(): Promise<void> {
         workerId: null,
         claimedAt: null,
         completedAt: null,
+        nextAttemptAt: null,
         lastError: null,
       },
     });

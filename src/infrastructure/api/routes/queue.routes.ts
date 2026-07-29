@@ -41,7 +41,10 @@ export async function registerQueueRoutes(
   );
 
   app.post("/queue/claim-next", async (_request, reply) => {
-    const queueItem = await queueService.claimNextQueueItem();
+    const queueItem =
+  await queueService.claimNextQueueItem(
+    "api-worker",
+  );
 
     if (!queueItem) {
       return reply.status(204).send();

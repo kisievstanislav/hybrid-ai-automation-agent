@@ -10,5 +10,6 @@ export interface QueueItem {
   readonly createdAt: Date;
   readonly claimedAt: Date | null;
   readonly completedAt: Date | null;
+  readonly nextAttemptAt: Date | null;
   readonly lastError: string | null;
 }

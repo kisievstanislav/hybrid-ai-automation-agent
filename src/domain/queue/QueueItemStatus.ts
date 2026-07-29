@@ -6,4 +6,5 @@ export enum QueueItemStatus {
   FAILED = "FAILED",
   HUMAN_REVIEW = "HUMAN_REVIEW",
   RETRY_PENDING = "RETRY_PENDING",
+  DEAD_LETTER = "DEAD_LETTER",
 }

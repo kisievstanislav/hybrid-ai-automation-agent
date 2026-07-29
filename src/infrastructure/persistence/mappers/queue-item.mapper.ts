@@ -4,9 +4,12 @@ import {
   type QueueItem,
 } from "../../../domain/index.js";
 
-type PrismaQueueItem = Prisma.QueueItemGetPayload<Record<string, never>>;
+type PrismaQueueItem =
+  Prisma.QueueItemGetPayload<Record<string, never>>;
 
-function toDomainQueueItemStatus(status: string): QueueItemStatus {
+function toDomainQueueItemStatus(
+  status: string,
+): QueueItemStatus {
   switch (status) {
     case "NEW":
       return QueueItemStatus.NEW;
@@ -29,8 +32,13 @@ function toDomainQueueItemStatus(status: string): QueueItemStatus {
     case "RETRY_PENDING":
       return QueueItemStatus.RETRY_PENDING;
 
+    case "DEAD_LETTER":
+      return QueueItemStatus.DEAD_LETTER;
+
     default:
-      throw new Error(`Unsupported queue item status: ${status}`);
+      throw new Error(
+        `Unsupported queue item status: ${status}`,
+      );
   }
 }
 
@@ -47,6 +55,7 @@ export function toDomainQueueItem(
     createdAt: queueItem.createdAt,
     claimedAt: queueItem.claimedAt,
     completedAt: queueItem.completedAt,
+    nextAttemptAt: queueItem.nextAttemptAt,
     lastError: queueItem.lastError,
   };
 }

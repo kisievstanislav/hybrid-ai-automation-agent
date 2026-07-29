@@ -34,6 +34,9 @@ function toPrismaQueueItemStatus(
 
     case QueueItemStatus.RETRY_PENDING:
       return PrismaQueueItemStatus.RETRY_PENDING;
+
+    case QueueItemStatus.DEAD_LETTER:
+      return PrismaQueueItemStatus.DEAD_LETTER;
   }
 }
 
@@ -58,16 +61,23 @@ export class PrismaQueueRepository implements QueueRepository {
     return queueItem ? toDomainQueueItem(queueItem) : null;
   }
 
-  async claimNext(): Promise<QueueItem | null> {
+  async claimNext(
+    workerId: string,
+  ): Promise<QueueItem | null> {
     return prisma.$transaction(async (transaction) => {
       const candidate = await transaction.queueItem.findFirst({
         where: {
-          status: {
-            in: [
-              PrismaQueueItemStatus.NEW,
-              PrismaQueueItemStatus.RETRY_PENDING,
-            ],
-          },
+          OR: [
+            {
+              status: PrismaQueueItemStatus.NEW,
+            },
+            {
+              status: PrismaQueueItemStatus.RETRY_PENDING,
+              nextAttemptAt: {
+                lte: new Date(),
+              },
+            },
+          ],
         },
         orderBy: {
           createdAt: "asc",
@@ -85,7 +95,12 @@ export class PrismaQueueRepository implements QueueRepository {
         },
         data: {
           status: PrismaQueueItemStatus.CLAIMED,
+          workerId,
           claimedAt: new Date(),
+          nextAttemptAt: null,
+          attemptCount: {
+            increment: 1,
+          },
         },
       });
 
@@ -104,22 +119,36 @@ export class PrismaQueueRepository implements QueueRepository {
     });
   }
 
-  async update(queueItem: QueueItem): Promise<QueueItem> {
-    const updatedQueueItem = await prisma.queueItem.update({
-      where: {
-        id: queueItem.id,
-      },
-      data: {
-        status: toPrismaQueueItemStatus(queueItem.status),
-        attemptCount: queueItem.attemptCount,
-        correlationId: queueItem.correlationId,
-        workerId: queueItem.workerId,
-        claimedAt: queueItem.claimedAt,
-        completedAt: queueItem.completedAt,
-        lastError: queueItem.lastError,
-      },
-    });
+  async updateStatus(
+  queueItemId: string,
+  status: QueueItemStatus,
+  options: {
+    readonly completedAt?: Date | null;
+    readonly nextAttemptAt?: Date | null;
+    readonly lastError?: string | null;
+  } = {},
+): Promise<QueueItem> {
+  const updatedQueueItem = await prisma.queueItem.update({
+    where: {
+      id: queueItemId,
+    },
+    data: {
+      status: toPrismaQueueItemStatus(status),
 
-    return toDomainQueueItem(updatedQueueItem);
-  }
+      ...(options.completedAt !== undefined && {
+        completedAt: options.completedAt,
+      }),
+
+      ...(options.nextAttemptAt !== undefined && {
+        nextAttemptAt: options.nextAttemptAt,
+      }),
+
+      ...(options.lastError !== undefined && {
+        lastError: options.lastError,
+      }),
+    },
+  });
+
+  return toDomainQueueItem(updatedQueueItem);
+}
 }

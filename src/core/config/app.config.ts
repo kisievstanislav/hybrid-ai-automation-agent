@@ -1,4 +1,4 @@
-import { environment } from './environment.js';
+import { environment } from "./environment.js";
 
 export const appConfig = {
   environment: environment.NODE_ENV,
@@ -19,11 +19,22 @@ export const appConfig = {
     provider: environment.AI_PROVIDER,
     openAiApiKey: environment.OPENAI_API_KEY,
     ollamaBaseUrl: environment.OLLAMA_BASE_URL,
-    confidenceThreshold: environment.AI_CONFIDENCE_THRESHOLD,
+    confidenceThreshold:
+      environment.AI_CONFIDENCE_THRESHOLD,
   },
 
   retry: {
     maxAttempts: environment.MAX_RETRY_ATTEMPTS,
+  },
+
+  queueWorker: {
+    workerId: environment.WORKER_ID,
+    pollIntervalMs: environment.QUEUE_POLL_INTERVAL_MS,
+    retryBaseDelayMs:
+      environment.QUEUE_RETRY_BASE_DELAY_MS,
+    retryMaxDelayMs:
+      environment.QUEUE_RETRY_MAX_DELAY_MS,
+    concurrency: environment.QUEUE_CONCURRENCY,
   },
 
   logging: {
@@ -36,3 +47,5 @@ export const appConfig = {
 } as const;
 
 export type AppConfig = typeof appConfig;
+export type QueueWorkerConfig =
+  typeof appConfig.queueWorker;

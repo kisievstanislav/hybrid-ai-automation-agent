@@ -42,18 +42,19 @@ describe("Domain models", () => {
       updatedAt,
     };
 
-    const queueItem: QueueItem = {
-      id: "QUEUE-1001",
-      ticketId: ticket.id,
-      status: QueueItemStatus.PROCESSING,
-      attemptCount: 1,
-      correlationId: "CORRELATION-1001",
-      workerId: "WORKER-01",
-      createdAt,
-      claimedAt: processedAt,
-      completedAt: null,
-      lastError: null,
-    };
+   const queueItem: QueueItem = {
+  id: "QUEUE-1001",
+  ticketId: ticket.id,
+  status: QueueItemStatus.PROCESSING,
+  attemptCount: 1,
+  correlationId: "CORRELATION-1001",
+  workerId: "WORKER-01",
+  createdAt,
+  claimedAt: processedAt,
+  completedAt: null,
+  nextAttemptAt: null,
+  lastError: null,
+};
 
     const aiClassification: AiClassificationResult = {
       category: TicketCategory.AUTHENTICATION,
