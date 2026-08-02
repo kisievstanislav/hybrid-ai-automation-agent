@@ -1,14 +1,14 @@
-import type { TicketRepository } from "../../../application/repositories/index.js";
-import type { Ticket } from "../../../domain/index.js";
+import type { TicketRepository } from '../../../application/repositories/index.js';
+import type { Ticket } from '../../../domain/index.js';
 
-import { prisma } from "../../database/prisma-client.js";
-import { toDomainTicket } from "../mappers/ticket.mapper.js";
+import { prisma } from '../../database/prisma-client.js';
+import { toDomainTicket } from '../mappers/ticket.mapper.js';
 
 export class PrismaTicketRepository implements TicketRepository {
   async findAll(): Promise<readonly Ticket[]> {
     const tickets = await prisma.ticket.findMany({
       orderBy: {
-        createdAt: "asc",
+        createdAt: 'asc',
       },
     });
 

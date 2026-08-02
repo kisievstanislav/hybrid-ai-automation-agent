@@ -4,18 +4,27 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "build": "tsc",
-    "start": "node dist/src/index.js",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
-    "format": "prettier src --write",
-    "format:check": "prettier src --check",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "dev:api": "tsx src/infrastructure/api/server.ts"
-  },
+  "typecheck": "tsc --noEmit",
+  "build": "tsc",
+  "start": "node dist/src/index.js",
+
+  "lint": "eslint src",
+  "lint:fix": "eslint src --fix",
+
+  "format": "prettier src --write",
+  "format:check": "prettier src --check",
+
+  "test": "vitest",
+  "test:run": "vitest run",
+  "test:coverage": "vitest run --coverage",
+
+  "test:ui": "playwright test",
+  "test:ui:headed": "playwright test --headed",
+  "test:ui:debug": "playwright test --debug",
+  "test:ui:report": "playwright show-report",
+
+  "dev:api": "tsx src/infrastructure/api/server.ts"
+},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kisievstanislav/hybrid-ai-automation-agent.git"

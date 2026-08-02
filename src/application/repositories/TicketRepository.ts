@@ -1,4 +1,4 @@
-import type { Ticket } from "../../domain/index.js";
+import type { Ticket } from '../../domain/index.js';
 
 export interface TicketRepository {
   findAll(): Promise<readonly Ticket[]>;

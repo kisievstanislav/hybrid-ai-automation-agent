@@ -1,11 +1,11 @@
-import { appConfig } from "../../core/config/app.config.js";
-import { logger } from "../../core/logging/index.js";
-import { createApp } from "./app.js";
+import { appConfig } from '../../core/config/app.config.js';
+import { logger } from '../../core/logging/index.js';
+import { createApp } from './app.js';
 
 const app = createApp();
 
 const port = Number(new URL(appConfig.app.baseUrl).port || 3001);
-const host = "0.0.0.0";
+const host = '0.0.0.0';
 
 try {
   await app.listen({
@@ -18,9 +18,9 @@ try {
       host,
       port,
     },
-    "Fastify server started",
+    'Fastify server started',
   );
 } catch (error) {
-  logger.error(error, "Failed to start Fastify server");
+  logger.error(error, 'Failed to start Fastify server');
   process.exit(1);
 }
