@@ -1,7 +1,7 @@
-import { ProcessingDecision } from "./ProcessingDecision.js";
-import { SupportTeam } from "./SupportTeam.js";
-import { TicketCategory } from "./TicketCategory.js";
-import { TicketPriority } from "./TicketPriority.js";
+import { ProcessingDecision } from './ProcessingDecision.js';
+import { SupportTeam } from './SupportTeam.js';
+import { TicketCategory } from './TicketCategory.js';
+import { TicketPriority } from './TicketPriority.js';
 
 export interface TicketProcessingDecision {
   readonly ticketId: string;

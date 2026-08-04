@@ -1,13 +1,10 @@
-import type { Logger } from "pino";
+import type { Logger } from 'pino';
 
-import type { QueueItem } from "../../domain/index.js";
-import type { QueueService } from "../services/index.js";
-import type { QueueProcessor } from "./QueueProcessor.js";
-import {
-  QueueProcessingOutcome,
-  type QueueProcessingResult,
-} from "./QueueProcessingResult.js";
-import type { RetryStrategy } from "./RetryStrategy.js";
+import type { QueueItem } from '../../domain/index.js';
+import type { QueueService } from '../services/index.js';
+import type { QueueProcessor } from './QueueProcessor.js';
+import { QueueProcessingOutcome, type QueueProcessingResult } from './QueueProcessingResult.js';
+import type { RetryStrategy } from './RetryStrategy.js';
 
 export interface QueueWorkerOptions {
   readonly workerId: string;
@@ -33,7 +30,7 @@ export class QueueWorker {
         {
           workerId: this.options.workerId,
         },
-        "Queue worker is already running",
+        'Queue worker is already running',
       );
 
       return;
@@ -45,7 +42,7 @@ export class QueueWorker {
       {
         workerId: this.options.workerId,
       },
-      "Queue worker started",
+      'Queue worker started',
     );
 
     this.pollingPromise = this.run();
@@ -60,7 +57,7 @@ export class QueueWorker {
       {
         workerId: this.options.workerId,
       },
-      "Queue worker stopping",
+      'Queue worker stopping',
     );
 
     this.running = false;
@@ -75,7 +72,7 @@ export class QueueWorker {
       {
         workerId: this.options.workerId,
       },
-      "Queue worker stopped",
+      'Queue worker stopped',
     );
   }
 
@@ -93,7 +90,7 @@ export class QueueWorker {
             workerId: this.options.workerId,
             err: error,
           },
-          "Queue worker polling failed",
+          'Queue worker polling failed',
         );
       }
 
@@ -104,10 +101,7 @@ export class QueueWorker {
   }
 
   private async processNextItem(): Promise<void> {
-    const queueItem =
-      await this.queueService.claimNextQueueItem(
-        this.options.workerId,
-      );
+    const queueItem = await this.queueService.claimNextQueueItem(this.options.workerId);
 
     if (!queueItem) {
       return;
@@ -120,14 +114,13 @@ export class QueueWorker {
         ticketId: queueItem.ticketId,
         attemptCount: queueItem.attemptCount,
       },
-      "Queue item claimed",
+      'Queue item claimed',
     );
 
     await this.queueService.markProcessing(queueItem.id);
 
     try {
-      const result =
-        await this.queueProcessor.process(queueItem);
+      const result = await this.queueProcessor.process(queueItem);
 
       await this.handleResult(queueItem, result);
     } catch (error: unknown) {
@@ -135,10 +128,7 @@ export class QueueWorker {
     }
   }
 
-  private async handleResult(
-    queueItem: QueueItem,
-    result: QueueProcessingResult,
-  ): Promise<void> {
+  private async handleResult(queueItem: QueueItem, result: QueueProcessingResult): Promise<void> {
     switch (result.outcome) {
       case QueueProcessingOutcome.COMPLETED:
         await this.queueService.markCompleted(queueItem.id);
@@ -148,25 +138,20 @@ export class QueueWorker {
             queueItemId: queueItem.id,
             ticketId: queueItem.ticketId,
           },
-          "Queue item completed",
+          'Queue item completed',
         );
 
         return;
 
       case QueueProcessingOutcome.RETRY:
-        await this.handleRetry(
-          queueItem,
-          result.errorMessage ??
-            "Temporary processing failure.",
-        );
+        await this.handleRetry(queueItem, result.errorMessage ?? 'Temporary processing failure.');
 
         return;
 
       case QueueProcessingOutcome.FAILED:
         await this.queueService.markFailed(
           queueItem.id,
-          result.errorMessage ??
-            "Queue processing failed.",
+          result.errorMessage ?? 'Queue processing failed.',
         );
 
         this.logger.error(
@@ -175,7 +160,7 @@ export class QueueWorker {
             ticketId: queueItem.ticketId,
             errorMessage: result.errorMessage,
           },
-          "Queue item failed",
+          'Queue item failed',
         );
 
         return;
@@ -183,8 +168,7 @@ export class QueueWorker {
       case QueueProcessingOutcome.HUMAN_REVIEW:
         await this.queueService.markHumanReview(
           queueItem.id,
-          result.errorMessage ??
-            "Human review required.",
+          result.errorMessage ?? 'Human review required.',
         );
 
         this.logger.warn(
@@ -193,19 +177,13 @@ export class QueueWorker {
             ticketId: queueItem.ticketId,
             reason: result.errorMessage,
           },
-          "Queue item sent to human review",
+          'Queue item sent to human review',
         );
     }
   }
 
-  private async handleUnexpectedError(
-    queueItem: QueueItem,
-    error: unknown,
-  ): Promise<void> {
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : "Unknown processing error.";
+  private async handleUnexpectedError(queueItem: QueueItem, error: unknown): Promise<void> {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown processing error.';
 
     this.logger.error(
       {
@@ -213,24 +191,15 @@ export class QueueWorker {
         ticketId: queueItem.ticketId,
         err: error,
       },
-      "Unexpected queue processing error",
+      'Unexpected queue processing error',
     );
 
     await this.handleRetry(queueItem, errorMessage);
   }
 
-  private async handleRetry(
-    queueItem: QueueItem,
-    errorMessage: string,
-  ): Promise<void> {
-    if (
-      queueItem.attemptCount >=
-      this.options.maxRetryAttempts
-    ) {
-      await this.queueService.markDeadLetter(
-        queueItem.id,
-        errorMessage,
-      );
+  private async handleRetry(queueItem: QueueItem, errorMessage: string): Promise<void> {
+    if (queueItem.attemptCount >= this.options.maxRetryAttempts) {
+      await this.queueService.markDeadLetter(queueItem.id, errorMessage);
 
       this.logger.error(
         {
@@ -238,26 +207,17 @@ export class QueueWorker {
           ticketId: queueItem.ticketId,
           attemptCount: queueItem.attemptCount,
         },
-        "Queue item moved to dead letter",
+        'Queue item moved to dead letter',
       );
 
       return;
     }
 
-    const delayMs =
-      this.retryStrategy.calculateDelayMs(
-        queueItem.attemptCount,
-      );
+    const delayMs = this.retryStrategy.calculateDelayMs(queueItem.attemptCount);
 
-    const nextAttemptAt = new Date(
-      Date.now() + delayMs,
-    );
+    const nextAttemptAt = new Date(Date.now() + delayMs);
 
-    await this.queueService.scheduleRetry(
-      queueItem.id,
-      nextAttemptAt,
-      errorMessage,
-    );
+    await this.queueService.scheduleRetry(queueItem.id, nextAttemptAt, errorMessage);
 
     this.logger.warn(
       {
@@ -267,13 +227,11 @@ export class QueueWorker {
         nextAttemptAt,
         delayMs,
       },
-      "Queue item scheduled for retry",
+      'Queue item scheduled for retry',
     );
   }
 
-  private async delay(
-    milliseconds: number,
-  ): Promise<void> {
+  private async delay(milliseconds: number): Promise<void> {
     await new Promise<void>((resolve) => {
       setTimeout(resolve, milliseconds);
     });

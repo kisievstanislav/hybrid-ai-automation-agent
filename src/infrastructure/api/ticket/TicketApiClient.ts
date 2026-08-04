@@ -1,4 +1,4 @@
-import { Ticket } from "../../../domain/index.js";
+import { Ticket } from '../../../domain/index.js';
 
 export interface TicketApiClient {
   getAllTickets(): Promise<readonly Ticket[]>;
