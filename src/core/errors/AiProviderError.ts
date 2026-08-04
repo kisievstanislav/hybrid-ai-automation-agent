@@ -1,4 +1,4 @@
-import { BaseAppError } from "./BaseAppError.js";
+import { BaseAppError } from './BaseAppError.js';
 
 export interface AiProviderErrorOptions {
   retryable?: boolean;
@@ -6,12 +6,9 @@ export interface AiProviderErrorOptions {
 }
 
 export class AiProviderError extends BaseAppError {
-  constructor(
-    message: string,
-    options: AiProviderErrorOptions = {},
-  ) {
+  constructor(message: string, options: AiProviderErrorOptions = {}) {
     super({
-      code: "AI_PROVIDER_ERROR",
+      code: 'AI_PROVIDER_ERROR',
       message,
       cause: options.cause,
       retryable: options.retryable ?? true,

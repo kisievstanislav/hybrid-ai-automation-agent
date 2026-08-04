@@ -8,9 +8,7 @@ import { aiClassificationSchema } from '../../../../../src/infrastructure/ai/sch
 describe('MockAiProvider', () => {
   const provider = new MockAiProvider();
 
-  const createTicket = (
-    overrides: Partial<Ticket> = {},
-  ): Ticket => ({
+  const createTicket = (overrides: Partial<Ticket> = {}): Ticket => ({
     id: 'TKT-1001',
     title: 'General support request',
     description: 'Customer needs assistance.',
@@ -40,8 +38,7 @@ describe('MockAiProvider', () => {
       recommendedTeam: 'IDENTITY_SUPPORT',
       recommendedAction: 'Review account access and authentication logs',
       confidence: 0.94,
-      reasoningSummary:
-        'The ticket describes an account authentication problem.',
+      reasoningSummary: 'The ticket describes an account authentication problem.',
       riskIndicators: [],
     });
   });
@@ -57,9 +54,7 @@ describe('MockAiProvider', () => {
     expect(result.category).toBe('SECURITY');
     expect(result.priority).toBe('CRITICAL');
     expect(result.recommendedTeam).toBe('SECURITY_OPERATIONS');
-    expect(result.riskIndicators).toContain(
-      'POTENTIAL_SECURITY_INCIDENT',
-    );
+    expect(result.riskIndicators).toContain('POTENTIAL_SECURITY_INCIDENT');
   });
 
   it('should classify a billing problem', async () => {
