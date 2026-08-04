@@ -1,26 +1,18 @@
-import type { Logger } from "pino";
-import {
-  afterAll,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
-import { prisma } from "../../../src/infrastructure/database/prisma-client.js";
-import { CustomerType, QueueItemStatus } from "../../../src/domain/index.js";
-import { PrismaQueueRepository } from "../../../src/infrastructure/persistence/repositories/PrismaQueueRepository.js";
-import { QueueProcessingOutcome } from "../../../src/application/queue/QueueProcessingResult.js";
-import { QueueProcessor } from "../../../src/application/queue/QueueProcessor.js";
-import { QueueWorker } from "../../../src/application/queue/QueueWorker.js";
-import { RetryStrategy } from "../../../src/application/queue/RetryStrategy.js";
-import { QueueService } from "../../../src/application/services/QueueService.js";
+import type { Logger } from 'pino';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { prisma } from '../../../src/infrastructure/database/prisma-client.js';
+import { CustomerType, QueueItemStatus } from '../../../src/domain/index.js';
+import { PrismaQueueRepository } from '../../../src/infrastructure/persistence/repositories/PrismaQueueRepository.js';
+import { QueueProcessingOutcome } from '../../../src/application/queue/QueueProcessingResult.js';
+import { QueueProcessor } from '../../../src/application/queue/QueueProcessor.js';
+import { QueueWorker } from '../../../src/application/queue/QueueWorker.js';
+import { RetryStrategy } from '../../../src/application/queue/RetryStrategy.js';
+import { QueueService } from '../../../src/application/services/QueueService.js';
 
-describe("QueueWorker integration", () => {
-  const ticketId = "TKT-INTEGRATION-1001";
-  const queueItemId = "QUEUE-INTEGRATION-1001";
-  const correlationId = "CORR-INTEGRATION-1001";
+describe('QueueWorker integration', () => {
+  const ticketId = 'TKT-INTEGRATION-1001';
+  const queueItemId = 'QUEUE-INTEGRATION-1001';
+  const correlationId = 'CORR-INTEGRATION-1001';
 
   /**
    * Before every test:
@@ -47,9 +39,8 @@ describe("QueueWorker integration", () => {
     await prisma.ticket.create({
       data: {
         id: ticketId,
-        title: "Integration test ticket",
-        description:
-          "Verify QueueWorker behavior using the real database.",
+        title: 'Integration test ticket',
+        description: 'Verify QueueWorker behavior using the real database.',
         customerType: CustomerType.STANDARD,
         tags: [],
       },
@@ -116,7 +107,7 @@ describe("QueueWorker integration", () => {
    * - processor is called
    * - completedAt is saved
    */
-  it("should complete a queue item using the real repository and database", async () => {
+  it('should complete a queue item using the real repository and database', async () => {
     const queueRepository = new PrismaQueueRepository();
     const queueService = new QueueService(queueRepository);
 
@@ -132,41 +123,27 @@ describe("QueueWorker integration", () => {
 
     const logger = createTestLogger();
 
-    const worker = new QueueWorker(
-      queueService,
-      queueProcessor,
-      retryStrategy,
-      logger,
-      {
-        workerId: "integration-worker-1",
-        pollIntervalMs: 10,
-        maxRetryAttempts: 3,
-      },
-    );
+    const worker = new QueueWorker(queueService, queueProcessor, retryStrategy, logger, {
+      workerId: 'integration-worker-1',
+      pollIntervalMs: 10,
+      maxRetryAttempts: 3,
+    });
 
     worker.start();
 
-    await waitForQueueStatus(
-      queueItemId,
-      QueueItemStatus.COMPLETED,
-    );
+    await waitForQueueStatus(queueItemId, QueueItemStatus.COMPLETED);
 
     await worker.stop();
 
-    const completedQueueItem =
-      await prisma.queueItem.findUniqueOrThrow({
-        where: {
-          id: queueItemId,
-        },
-      });
+    const completedQueueItem = await prisma.queueItem.findUniqueOrThrow({
+      where: {
+        id: queueItemId,
+      },
+    });
 
-    expect(completedQueueItem.status).toBe(
-      QueueItemStatus.COMPLETED,
-    );
+    expect(completedQueueItem.status).toBe(QueueItemStatus.COMPLETED);
 
-    expect(completedQueueItem.workerId).toBe(
-      "integration-worker-1",
-    );
+    expect(completedQueueItem.workerId).toBe('integration-worker-1');
 
     expect(completedQueueItem.attemptCount).toBe(1);
     expect(completedQueueItem.claimedAt).not.toBeNull();
@@ -176,9 +153,7 @@ describe("QueueWorker integration", () => {
 
     expect(queueProcessor.process).toHaveBeenCalledTimes(1);
 
-    expect(
-      retryStrategy.calculateDelayMs,
-    ).not.toHaveBeenCalled();
+    expect(retryStrategy.calculateDelayMs).not.toHaveBeenCalled();
   });
 
   /**
@@ -197,14 +172,14 @@ describe("QueueWorker integration", () => {
    * - nextAttemptAt is saved
    * - the error message is saved
    */
-  it("should schedule a retry using the real repository", async () => {
+  it('should schedule a retry using the real repository', async () => {
     const queueRepository = new PrismaQueueRepository();
     const queueService = new QueueService(queueRepository);
 
     const queueProcessor: QueueProcessor = {
       process: vi.fn().mockResolvedValue({
         outcome: QueueProcessingOutcome.RETRY,
-        errorMessage: "Temporary API outage",
+        errorMessage: 'Temporary API outage',
       }),
     };
 
@@ -214,48 +189,32 @@ describe("QueueWorker integration", () => {
 
     const logger = createTestLogger();
 
-    const worker = new QueueWorker(
-      queueService,
-      queueProcessor,
-      retryStrategy,
-      logger,
-      {
-        workerId: "integration-worker-1",
-        pollIntervalMs: 10,
-        maxRetryAttempts: 3,
-      },
-    );
+    const worker = new QueueWorker(queueService, queueProcessor, retryStrategy, logger, {
+      workerId: 'integration-worker-1',
+      pollIntervalMs: 10,
+      maxRetryAttempts: 3,
+    });
 
     worker.start();
 
-    await waitForQueueStatus(
-      queueItemId,
-      QueueItemStatus.RETRY_PENDING,
-    );
+    await waitForQueueStatus(queueItemId, QueueItemStatus.RETRY_PENDING);
 
     await worker.stop();
 
-    const queueItem =
-      await prisma.queueItem.findUniqueOrThrow({
-        where: {
-          id: queueItemId,
-        },
-      });
+    const queueItem = await prisma.queueItem.findUniqueOrThrow({
+      where: {
+        id: queueItemId,
+      },
+    });
 
-    expect(queueItem.status).toBe(
-      QueueItemStatus.RETRY_PENDING,
-    );
+    expect(queueItem.status).toBe(QueueItemStatus.RETRY_PENDING);
 
     expect(queueItem.attemptCount).toBe(1);
     expect(queueItem.nextAttemptAt).not.toBeNull();
-    expect(queueItem.lastError).toBe(
-      "Temporary API outage",
-    );
+    expect(queueItem.lastError).toBe('Temporary API outage');
     expect(queueItem.completedAt).toBeNull();
 
-    expect(
-      retryStrategy.calculateDelayMs,
-    ).toHaveBeenCalledWith(1);
+    expect(retryStrategy.calculateDelayMs).toHaveBeenCalledWith(1);
   });
 
   /**
@@ -278,7 +237,7 @@ describe("QueueWorker integration", () => {
    * → PROCESSING
    * → DEAD_LETTER
    */
-  it("should move an item to dead letter after max retry attempts", async () => {
+  it('should move an item to dead letter after max retry attempts', async () => {
     await prisma.queueItem.update({
       where: {
         id: queueItemId,
@@ -294,7 +253,7 @@ describe("QueueWorker integration", () => {
     const queueProcessor: QueueProcessor = {
       process: vi.fn().mockResolvedValue({
         outcome: QueueProcessingOutcome.RETRY,
-        errorMessage: "External service unavailable",
+        errorMessage: 'External service unavailable',
       }),
     };
 
@@ -304,48 +263,32 @@ describe("QueueWorker integration", () => {
 
     const logger = createTestLogger();
 
-    const worker = new QueueWorker(
-      queueService,
-      queueProcessor,
-      retryStrategy,
-      logger,
-      {
-        workerId: "integration-worker-1",
-        pollIntervalMs: 10,
-        maxRetryAttempts: 3,
-      },
-    );
+    const worker = new QueueWorker(queueService, queueProcessor, retryStrategy, logger, {
+      workerId: 'integration-worker-1',
+      pollIntervalMs: 10,
+      maxRetryAttempts: 3,
+    });
 
     worker.start();
 
-    await waitForQueueStatus(
-      queueItemId,
-      QueueItemStatus.DEAD_LETTER,
-    );
+    await waitForQueueStatus(queueItemId, QueueItemStatus.DEAD_LETTER);
 
     await worker.stop();
 
-    const queueItem =
-      await prisma.queueItem.findUniqueOrThrow({
-        where: {
-          id: queueItemId,
-        },
-      });
+    const queueItem = await prisma.queueItem.findUniqueOrThrow({
+      where: {
+        id: queueItemId,
+      },
+    });
 
-    expect(queueItem.status).toBe(
-      QueueItemStatus.DEAD_LETTER,
-    );
+    expect(queueItem.status).toBe(QueueItemStatus.DEAD_LETTER);
 
     expect(queueItem.attemptCount).toBe(3);
-    expect(queueItem.lastError).toBe(
-      "External service unavailable",
-    );
+    expect(queueItem.lastError).toBe('External service unavailable');
     expect(queueItem.completedAt).not.toBeNull();
     expect(queueItem.nextAttemptAt).toBeNull();
 
-    expect(
-      retryStrategy.calculateDelayMs,
-    ).not.toHaveBeenCalled();
+    expect(retryStrategy.calculateDelayMs).not.toHaveBeenCalled();
   });
 
   /**
@@ -363,14 +306,14 @@ describe("QueueWorker integration", () => {
    * - unclear cases are not retried
    * - the reason is stored for the reviewer
    */
-  it("should send an item to human review using the real repository", async () => {
+  it('should send an item to human review using the real repository', async () => {
     const queueRepository = new PrismaQueueRepository();
     const queueService = new QueueService(queueRepository);
 
     const queueProcessor: QueueProcessor = {
       process: vi.fn().mockResolvedValue({
         outcome: QueueProcessingOutcome.HUMAN_REVIEW,
-        errorMessage: "Low confidence result",
+        errorMessage: 'Low confidence result',
       }),
     };
 
@@ -380,48 +323,32 @@ describe("QueueWorker integration", () => {
 
     const logger = createTestLogger();
 
-    const worker = new QueueWorker(
-      queueService,
-      queueProcessor,
-      retryStrategy,
-      logger,
-      {
-        workerId: "integration-worker-1",
-        pollIntervalMs: 10,
-        maxRetryAttempts: 3,
-      },
-    );
+    const worker = new QueueWorker(queueService, queueProcessor, retryStrategy, logger, {
+      workerId: 'integration-worker-1',
+      pollIntervalMs: 10,
+      maxRetryAttempts: 3,
+    });
 
     worker.start();
 
-    await waitForQueueStatus(
-      queueItemId,
-      QueueItemStatus.HUMAN_REVIEW,
-    );
+    await waitForQueueStatus(queueItemId, QueueItemStatus.HUMAN_REVIEW);
 
     await worker.stop();
 
-    const queueItem =
-      await prisma.queueItem.findUniqueOrThrow({
-        where: {
-          id: queueItemId,
-        },
-      });
+    const queueItem = await prisma.queueItem.findUniqueOrThrow({
+      where: {
+        id: queueItemId,
+      },
+    });
 
-    expect(queueItem.status).toBe(
-      QueueItemStatus.HUMAN_REVIEW,
-    );
+    expect(queueItem.status).toBe(QueueItemStatus.HUMAN_REVIEW);
 
     expect(queueItem.attemptCount).toBe(1);
-    expect(queueItem.lastError).toBe(
-      "Low confidence result",
-    );
+    expect(queueItem.lastError).toBe('Low confidence result');
     expect(queueItem.completedAt).not.toBeNull();
     expect(queueItem.nextAttemptAt).toBeNull();
 
-    expect(
-      retryStrategy.calculateDelayMs,
-    ).not.toHaveBeenCalled();
+    expect(retryStrategy.calculateDelayMs).not.toHaveBeenCalled();
   });
 
   /**
@@ -439,14 +366,14 @@ describe("QueueWorker integration", () => {
    * - the error message is stored
    * - completedAt is saved because processing has ended
    */
-  it("should mark an item as failed using the real repository", async () => {
+  it('should mark an item as failed using the real repository', async () => {
     const queueRepository = new PrismaQueueRepository();
     const queueService = new QueueService(queueRepository);
 
     const queueProcessor: QueueProcessor = {
       process: vi.fn().mockResolvedValue({
         outcome: QueueProcessingOutcome.FAILED,
-        errorMessage: "Invalid ticket data",
+        errorMessage: 'Invalid ticket data',
       }),
     };
 
@@ -456,48 +383,32 @@ describe("QueueWorker integration", () => {
 
     const logger = createTestLogger();
 
-    const worker = new QueueWorker(
-      queueService,
-      queueProcessor,
-      retryStrategy,
-      logger,
-      {
-        workerId: "integration-worker-1",
-        pollIntervalMs: 10,
-        maxRetryAttempts: 3,
-      },
-    );
+    const worker = new QueueWorker(queueService, queueProcessor, retryStrategy, logger, {
+      workerId: 'integration-worker-1',
+      pollIntervalMs: 10,
+      maxRetryAttempts: 3,
+    });
 
     worker.start();
 
-    await waitForQueueStatus(
-      queueItemId,
-      QueueItemStatus.FAILED,
-    );
+    await waitForQueueStatus(queueItemId, QueueItemStatus.FAILED);
 
     await worker.stop();
 
-    const queueItem =
-      await prisma.queueItem.findUniqueOrThrow({
-        where: {
-          id: queueItemId,
-        },
-      });
+    const queueItem = await prisma.queueItem.findUniqueOrThrow({
+      where: {
+        id: queueItemId,
+      },
+    });
 
-    expect(queueItem.status).toBe(
-      QueueItemStatus.FAILED,
-    );
+    expect(queueItem.status).toBe(QueueItemStatus.FAILED);
 
     expect(queueItem.attemptCount).toBe(1);
-    expect(queueItem.lastError).toBe(
-      "Invalid ticket data",
-    );
+    expect(queueItem.lastError).toBe('Invalid ticket data');
     expect(queueItem.completedAt).not.toBeNull();
     expect(queueItem.nextAttemptAt).toBeNull();
 
-    expect(
-      retryStrategy.calculateDelayMs,
-    ).not.toHaveBeenCalled();
+    expect(retryStrategy.calculateDelayMs).not.toHaveBeenCalled();
   });
 
   /**
@@ -513,16 +424,12 @@ describe("QueueWorker integration", () => {
    *
    * This verifies that one processor crash does not crash the worker.
    */
-  it("should schedule a retry when the processor throws an error", async () => {
+  it('should schedule a retry when the processor throws an error', async () => {
     const queueRepository = new PrismaQueueRepository();
     const queueService = new QueueService(queueRepository);
 
     const queueProcessor: QueueProcessor = {
-      process: vi
-        .fn()
-        .mockRejectedValue(
-          new Error("Connection failed"),
-        ),
+      process: vi.fn().mockRejectedValue(new Error('Connection failed')),
     };
 
     const retryStrategy: RetryStrategy = {
@@ -531,48 +438,32 @@ describe("QueueWorker integration", () => {
 
     const logger = createTestLogger();
 
-    const worker = new QueueWorker(
-      queueService,
-      queueProcessor,
-      retryStrategy,
-      logger,
-      {
-        workerId: "integration-worker-1",
-        pollIntervalMs: 10,
-        maxRetryAttempts: 3,
-      },
-    );
+    const worker = new QueueWorker(queueService, queueProcessor, retryStrategy, logger, {
+      workerId: 'integration-worker-1',
+      pollIntervalMs: 10,
+      maxRetryAttempts: 3,
+    });
 
     worker.start();
 
-    await waitForQueueStatus(
-      queueItemId,
-      QueueItemStatus.RETRY_PENDING,
-    );
+    await waitForQueueStatus(queueItemId, QueueItemStatus.RETRY_PENDING);
 
     await worker.stop();
 
-    const queueItem =
-      await prisma.queueItem.findUniqueOrThrow({
-        where: {
-          id: queueItemId,
-        },
-      });
+    const queueItem = await prisma.queueItem.findUniqueOrThrow({
+      where: {
+        id: queueItemId,
+      },
+    });
 
-    expect(queueItem.status).toBe(
-      QueueItemStatus.RETRY_PENDING,
-    );
+    expect(queueItem.status).toBe(QueueItemStatus.RETRY_PENDING);
 
     expect(queueItem.attemptCount).toBe(1);
-    expect(queueItem.lastError).toBe(
-      "Connection failed",
-    );
+    expect(queueItem.lastError).toBe('Connection failed');
     expect(queueItem.nextAttemptAt).not.toBeNull();
     expect(queueItem.completedAt).toBeNull();
 
-    expect(
-      retryStrategy.calculateDelayMs,
-    ).toHaveBeenCalledWith(1);
+    expect(retryStrategy.calculateDelayMs).toHaveBeenCalledWith(1);
 
     expect(logger.error).toHaveBeenCalled();
   });
@@ -604,12 +495,11 @@ async function waitForQueueStatus(
 ): Promise<void> {
   await vi.waitFor(
     async () => {
-      const queueItem =
-        await prisma.queueItem.findUnique({
-          where: {
-            id: queueItemId,
-          },
-        });
+      const queueItem = await prisma.queueItem.findUnique({
+        where: {
+          id: queueItemId,
+        },
+      });
 
       expect(queueItem?.status).toBe(expectedStatus);
     },

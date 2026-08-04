@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+
 import { appConfig } from './src/core/config/app.config.js';
 
 export default defineConfig({
@@ -9,6 +10,13 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
 
   reporter: [['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]],
+
+  webServer: {
+    command: 'npm run dev:api',
+    url: `${appConfig.app.baseUrl}/health`,
+    reuseExistingServer: !process.env.CI,
+    timeout: 30_000,
+  },
 
   use: {
     baseURL: appConfig.app.baseUrl,
