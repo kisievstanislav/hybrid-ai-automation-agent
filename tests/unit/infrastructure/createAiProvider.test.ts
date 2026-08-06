@@ -58,15 +58,23 @@ describe('createAiProvider', () => {
     expect(provider).toBeInstanceOf(OpenAiProvider);
   });
 
-  it('should throw when Ollama provider is selected before implementation', async () => {
+  it('should create OllamaProvider when Ollama provider is selected', async () => {
     vi.stubEnv('NODE_ENV', 'test');
     vi.stubEnv('APP_BASE_URL', 'http://localhost:3000');
     vi.stubEnv('API_BASE_URL', 'http://localhost:3000');
     vi.stubEnv('DATABASE_URL', 'file:./test.db');
     vi.stubEnv('AI_PROVIDER', 'ollama');
+    vi.stubEnv('OLLAMA_BASE_URL', 'http://localhost:11434');
+    vi.stubEnv('OLLAMA_MODEL', 'qwen2.5:3b');
+    vi.stubEnv('OLLAMA_TIMEOUT_MS', '60000');
 
     const { createAiProvider } = await import('../../../src/infrastructure/ai/createAiProvider.js');
 
-    expect(() => createAiProvider()).toThrow('Ollama provider is not implemented yet.');
+    const { OllamaProvider } =
+      await import('../../../src/infrastructure/ai/providers/OllamaProvider.js');
+
+    const provider = createAiProvider();
+
+    expect(provider).toBeInstanceOf(OllamaProvider);
   });
 });
