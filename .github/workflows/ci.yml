@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      NODE_ENV: test
       AI_PROVIDER: mock
       DATABASE_URL: file:./ci.db
       APP_BASE_URL: http://127.0.0.1:3001
@@ -46,8 +47,18 @@ jobs:
       - name: Run TypeScript typecheck
         run: npm run typecheck
 
-      - name: Run Vitest
-        run: npm run test:run
+      - name: Run unit and API integration tests
+        run: npm run test:run -- --exclude tests/integration/queue/queueWorker.test.ts
+
+      - name: Prepare QueueWorker test database
+        env:
+          DATABASE_URL: file:./queue-worker-ci.db
+        run: npx prisma migrate deploy
+
+      - name: Run QueueWorker integration tests
+        env:
+          DATABASE_URL: file:./queue-worker-ci.db
+        run: npx vitest run tests/integration/queue/queueWorker.test.ts
 
       - name: Build application
         run: npm run build
