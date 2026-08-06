@@ -6,23 +6,22 @@ import { QueueWorker } from '../../src/application/queue/QueueWorker.js';
 import type { RetryStrategy } from '../../src/application/queue/RetryStrategy.js';
 import { createBusinessRuleEngine } from '../../src/application/rules/createBusinessRuleEngine.js';
 import { QueueService } from '../../src/application/services/QueueService.js';
-import {
-  CustomerType,
-  QueueItemStatus,
-  SupportTeam,
-  TicketCategory,
-  TicketPriority,
-} from '../../src/domain/index.js';
-import { MockAiProvider } from '../../src/infrastructure/ai/mock/MockAiProvider.js';
+import { CustomerType, QueueItemStatus } from '../../src/domain/index.js';
+import { createAiProvider } from '../../src/infrastructure/ai/createAiProvider.js';
 import { PlaywrightHttpClient } from '../../src/infrastructure/api/client/PlaywrightHttpClient.js';
 import { FastifyTicketApiClient } from '../../src/infrastructure/api/ticket/FastifyTicketApiClient.js';
 import { prisma } from '../../src/infrastructure/database/prisma-client.js';
 import { PrismaQueueRepository } from '../../src/infrastructure/persistence/repositories/PrismaQueueRepository.js';
 import { PlaywrightTicketUiService } from '../../src/infrastructure/ui/playwright/index.js';
 
-test.describe('End-to-End Agent Workflow with Mock AI', () => {
-  const ticketId = 'TKT-E2E-MOCK-1001';
-  const queueItemId = 'QUEUE-E2E-MOCK-1001';
+test.describe('End-to-End Agent Workflow with Ollama', () => {
+  const ticketId = 'TKT-E2E-OLLAMA-1001';
+  const queueItemId = 'QUEUE-E2E-OLLAMA-1001';
+
+  test.skip(
+    process.env.AI_PROVIDER !== 'ollama',
+    'This local integration test requires AI_PROVIDER=ollama.',
+  );
 
   test.beforeEach(async () => {
     await deleteTestData();
@@ -41,7 +40,7 @@ test.describe('End-to-End Agent Workflow with Mock AI', () => {
       data: {
         id: queueItemId,
         ticketId,
-        correlationId: 'CORR-E2E-MOCK-1001',
+        correlationId: 'CORR-E2E-OLLAMA-1001',
         status: QueueItemStatus.NEW,
       },
     });
@@ -51,25 +50,39 @@ test.describe('End-to-End Agent Workflow with Mock AI', () => {
     await deleteTestData();
   });
 
-  test('should process a ticket with deterministic Mock AI output', async ({ request }) => {
+  test('should process a ticket using the real local Ollama provider', async ({ request }) => {
     const ticketApiClient = new FastifyTicketApiClient(new PlaywrightHttpClient(request));
 
     const orchestrator = new TicketProcessingOrchestrator(
       ticketApiClient,
-      new MockAiProvider(),
+      createAiProvider(),
       createBusinessRuleEngine(),
       new PlaywrightTicketUiService(),
       pino({ enabled: false }),
     );
 
-    const worker = createWorker(orchestrator);
+    const retryStrategy: RetryStrategy = {
+      calculateDelayMs: () => 1_000,
+    };
+
+    const worker = new QueueWorker(
+      new QueueService(new PrismaQueueRepository()),
+      orchestrator,
+      retryStrategy,
+      pino({ enabled: false }),
+      {
+        workerId: 'e2e-ollama-worker',
+        pollIntervalMs: 50,
+        maxRetryAttempts: 3,
+      },
+    );
 
     worker.start();
 
     try {
       await expect
         .poll(() => getQueueStatus(), {
-          timeout: 10_000,
+          timeout: 60_000,
         })
         .toBe(QueueItemStatus.COMPLETED);
     } finally {
@@ -90,38 +103,22 @@ test.describe('End-to-End Agent Workflow with Mock AI', () => {
       },
     });
 
-    expect(savedTicket.category).toBe(TicketCategory.AUTHENTICATION);
-    expect(savedTicket.priority).toBe(TicketPriority.HIGH);
-    expect(savedTicket.assignedTeam).toBe(SupportTeam.IDENTITY_SUPPORT);
+    // Real AI output can change, so we do not require one exact opinion.
+    expect(savedTicket.category).not.toBeNull();
+    expect(savedTicket.priority).not.toBeNull();
+    expect(savedTicket.assignedTeam).not.toBeNull();
 
-    expect(ticketFromApi.category).toBe(TicketCategory.AUTHENTICATION);
-    expect(ticketFromApi.priority).toBe(TicketPriority.HIGH);
-    expect(ticketFromApi.assignedTeam).toBe(SupportTeam.IDENTITY_SUPPORT);
+    // API must show the same persisted values.
+    expect(ticketFromApi.category).toBe(savedTicket.category);
+    expect(ticketFromApi.priority).toBe(savedTicket.priority);
+    expect(ticketFromApi.assignedTeam).toBe(savedTicket.assignedTeam);
 
     expect(completedQueueItem.status).toBe(QueueItemStatus.COMPLETED);
-    expect(completedQueueItem.workerId).toBe('e2e-mock-worker');
+    expect(completedQueueItem.workerId).toBe('e2e-ollama-worker');
     expect(completedQueueItem.attemptCount).toBe(1);
     expect(completedQueueItem.completedAt).not.toBeNull();
     expect(completedQueueItem.lastError).toBeNull();
   });
-
-  function createWorker(orchestrator: TicketProcessingOrchestrator): QueueWorker {
-    const retryStrategy: RetryStrategy = {
-      calculateDelayMs: () => 1_000,
-    };
-
-    return new QueueWorker(
-      new QueueService(new PrismaQueueRepository()),
-      orchestrator,
-      retryStrategy,
-      pino({ enabled: false }),
-      {
-        workerId: 'e2e-mock-worker',
-        pollIntervalMs: 50,
-        maxRetryAttempts: 3,
-      },
-    );
-  }
 
   async function getQueueStatus(): Promise<QueueItemStatus | undefined> {
     const queueItem = await prisma.queueItem.findUnique({

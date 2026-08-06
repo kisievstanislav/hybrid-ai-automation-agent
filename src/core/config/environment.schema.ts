@@ -15,7 +15,9 @@ export const environmentSchema = z.object({
   OPENAI_MODEL: z.string().default('gpt-5-mini'),
   OPENAI_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
 
-  OLLAMA_BASE_URL: z.url().optional(),
+  OLLAMA_BASE_URL: z.url().default('http://localhost:11434'),
+  OLLAMA_MODEL: z.string().trim().min(1).default('qwen2.5:3b'),
+  OLLAMA_TIMEOUT_MS: z.coerce.number().int().positive().default(60_000),
 
   AI_CONFIDENCE_THRESHOLD: z.coerce.number().min(0).max(1).default(0.8),
 

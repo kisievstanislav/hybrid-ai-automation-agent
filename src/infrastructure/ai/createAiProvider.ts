@@ -5,6 +5,7 @@ import { appConfig } from '../../core/config/app.config.js';
 import { ConfigurationError } from '../../core/errors/ConfigurationError.js';
 import { MockAiProvider } from './mock/MockAiProvider.js';
 import { OpenAiProvider } from './providers/OpenAiProvider.js';
+import { OllamaProvider } from './providers/OllamaProvider.js';
 
 export function createAiProvider(): AiProvider {
   switch (appConfig.ai.provider) {
@@ -25,6 +26,10 @@ export function createAiProvider(): AiProvider {
     }
 
     case 'ollama':
-      throw new ConfigurationError('Ollama provider is not implemented yet.');
+      return new OllamaProvider(
+        appConfig.ai.ollamaBaseUrl,
+        appConfig.ai.ollamaModel,
+        appConfig.ai.ollamaTimeoutMs,
+      );
   }
 }

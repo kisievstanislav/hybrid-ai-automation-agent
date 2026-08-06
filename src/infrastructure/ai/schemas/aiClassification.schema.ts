@@ -11,10 +11,19 @@ export const aiTicketCategorySchema = z.enum([
 
 export const aiTicketPrioritySchema = z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']);
 
+export const aiSupportTeamSchema = z.enum([
+  'IDENTITY_SUPPORT',
+  'BILLING_SUPPORT',
+  'TECHNICAL_SUPPORT',
+  'ACCOUNT_SUPPORT',
+  'SECURITY_OPERATIONS',
+  'GENERAL_SUPPORT',
+]);
+
 export const aiClassificationSchema = z.object({
   category: aiTicketCategorySchema,
   priority: aiTicketPrioritySchema,
-  recommendedTeam: z.string().trim().min(1),
+  recommendedTeam: aiSupportTeamSchema,
   recommendedAction: z.string().trim().min(1),
   confidence: z.number().min(0).max(1),
   reasoningSummary: z.string().trim().min(1),

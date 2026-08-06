@@ -17,10 +17,15 @@ export const appConfig = {
 
   ai: {
     provider: environment.AI_PROVIDER,
+
     openAiApiKey: environment.OPENAI_API_KEY,
     openAiModel: environment.OPENAI_MODEL,
     openAiTimeoutMs: environment.OPENAI_TIMEOUT_MS,
+
     ollamaBaseUrl: environment.OLLAMA_BASE_URL,
+    ollamaModel: environment.OLLAMA_MODEL,
+    ollamaTimeoutMs: environment.OLLAMA_TIMEOUT_MS,
+
     confidenceThreshold: environment.AI_CONFIDENCE_THRESHOLD,
   },
 
