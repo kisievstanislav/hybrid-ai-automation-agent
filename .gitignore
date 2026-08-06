@@ -33,6 +33,8 @@ pnpm-debug.log*
 playwright-report/
 test-results/
 blob-report/
+# Generated reports
+reports/
 
 # =====================================================
 # SQLite databases

@@ -6,10 +6,11 @@ import {
   PrismaTicketRepository,
 } from '../persistence/repositories/index.js';
 import { registerQueueRoutes } from './routes/queue.routes.js';
+import { reportingRoutes } from './routes/reporting.routes.js';
 import { registerTicketRoutes } from './routes/ticket.routes.js';
 import { registerTicketUiRoutes } from '../ui/ticket-ui.routes.js';
 
-export function createApp(): FastifyInstance {
+export async function createApp(): Promise<FastifyInstance> {
   const app = Fastify({
     logger: false,
   });
@@ -37,6 +38,8 @@ export function createApp(): FastifyInstance {
   app.register(registerTicketUiRoutes, {
     ticketService,
   });
+
+  await app.register(reportingRoutes);
 
   return app;
 }

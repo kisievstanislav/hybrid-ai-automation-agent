@@ -18,7 +18,7 @@ describe("FastifyTicketApiClient integration", () => {
   let ticketApiClient: FastifyTicketApiClient;
 
   beforeEach(async () => {
-    app = createApp();
+    app = await createApp();
 
     await app.listen({
       host: "127.0.0.1",

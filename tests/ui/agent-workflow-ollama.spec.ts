@@ -11,12 +11,14 @@ import { createAiProvider } from '../../src/infrastructure/ai/createAiProvider.j
 import { PlaywrightHttpClient } from '../../src/infrastructure/api/client/PlaywrightHttpClient.js';
 import { FastifyTicketApiClient } from '../../src/infrastructure/api/ticket/FastifyTicketApiClient.js';
 import { prisma } from '../../src/infrastructure/database/prisma-client.js';
+import { PrismaProcessingResultRecorder } from '../../src/infrastructure/persistence/repositories/PrismaProcessingResultRecorder.js';
 import { PrismaQueueRepository } from '../../src/infrastructure/persistence/repositories/PrismaQueueRepository.js';
 import { PlaywrightTicketUiService } from '../../src/infrastructure/ui/playwright/index.js';
 
 test.describe('End-to-End Agent Workflow with Ollama', () => {
   const ticketId = 'TKT-E2E-OLLAMA-1001';
   const queueItemId = 'QUEUE-E2E-OLLAMA-1001';
+  const correlationId = 'CORR-E2E-OLLAMA-1001';
 
   test.skip(
     process.env.AI_PROVIDER !== 'ollama',
@@ -40,7 +42,7 @@ test.describe('End-to-End Agent Workflow with Ollama', () => {
       data: {
         id: queueItemId,
         ticketId,
-        correlationId: 'CORR-E2E-OLLAMA-1001',
+        correlationId,
         status: QueueItemStatus.NEW,
       },
     });
@@ -58,6 +60,7 @@ test.describe('End-to-End Agent Workflow with Ollama', () => {
       createAiProvider(),
       createBusinessRuleEngine(),
       new PlaywrightTicketUiService(),
+      new PrismaProcessingResultRecorder(),
       pino({ enabled: false }),
     );
 
@@ -103,12 +106,16 @@ test.describe('End-to-End Agent Workflow with Ollama', () => {
       },
     });
 
-    // Real AI output can change, so we do not require one exact opinion.
+    const processingResult = await prisma.processingResult.findFirstOrThrow({
+      where: {
+        queueItemId,
+      },
+    });
+
     expect(savedTicket.category).not.toBeNull();
     expect(savedTicket.priority).not.toBeNull();
     expect(savedTicket.assignedTeam).not.toBeNull();
 
-    // API must show the same persisted values.
     expect(ticketFromApi.category).toBe(savedTicket.category);
     expect(ticketFromApi.priority).toBe(savedTicket.priority);
     expect(ticketFromApi.assignedTeam).toBe(savedTicket.assignedTeam);
@@ -118,6 +125,11 @@ test.describe('End-to-End Agent Workflow with Ollama', () => {
     expect(completedQueueItem.attemptCount).toBe(1);
     expect(completedQueueItem.completedAt).not.toBeNull();
     expect(completedQueueItem.lastError).toBeNull();
+
+    expect(processingResult.ticketId).toBe(ticketId);
+    expect(processingResult.queueItemId).toBe(queueItemId);
+    expect(processingResult.correlationId).toBe(correlationId);
+    expect(processingResult.successful).toBe(true);
   });
 
   async function getQueueStatus(): Promise<QueueItemStatus | undefined> {
@@ -131,6 +143,12 @@ test.describe('End-to-End Agent Workflow with Ollama', () => {
   }
 
   async function deleteTestData(): Promise<void> {
+    await prisma.processingResult.deleteMany({
+      where: {
+        queueItemId,
+      },
+    });
+
     await prisma.queueItem.deleteMany({
       where: {
         id: queueItemId,

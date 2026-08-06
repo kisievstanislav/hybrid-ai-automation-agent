@@ -19,7 +19,7 @@ describe("Queue routes", () => {
       },
     });
 
-    app = createApp();
+    app = await createApp();
     await app.ready();
   });
 

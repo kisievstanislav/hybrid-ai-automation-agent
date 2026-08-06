@@ -2,7 +2,7 @@ import { appConfig } from '../../core/config/app.config.js';
 import { logger } from '../../core/logging/index.js';
 import { createApp } from './app.js';
 
-const app = createApp();
+const app = await createApp();
 
 const port = Number(new URL(appConfig.app.baseUrl).port || 3001);
 const host = '0.0.0.0';
