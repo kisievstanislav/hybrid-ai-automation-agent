@@ -33,9 +33,12 @@ jobs:
 
       - name: Generate Prisma Client
         run: npx prisma generate
-        
+
       - name: Apply Prisma migrations
-        run: npx prisma migrate deploy  
+        run: npx prisma migrate deploy
+
+      - name: Seed test database
+        run: npx prisma db seed
 
       - name: Run ESLint
         run: npm run lint
